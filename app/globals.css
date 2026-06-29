@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+  OG Vibes Staff — "Professional Academic" theme.
+  Base neutrals are slate (900/800), primary brand is blue-600,
+  matching the OG Vibes student app's blue identity but toned for
+  a desktop, data-dense lecturer dashboard rather than a social feed.
+*/
+:root {
+  --background: oklch(0.99 0.002 247.86);
+  --foreground: oklch(0.21 0.034 264.66); /* slate-900-ish */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.034 264.66);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.034 264.66);
+
+  --primary: oklch(0.546 0.215 262.88); /* blue-600 */
+  --primary-foreground: oklch(0.98 0.003 247.86);
+
+  --secondary: oklch(0.97 0.003 247.86);
+  --secondary-foreground: oklch(0.279 0.041 260.03); /* slate-800-ish */
+
+  --muted: oklch(0.97 0.003 247.86);
+  --muted-foreground: oklch(0.554 0.046 257.42);
+
+  --accent: oklch(0.93 0.034 261.99);
+  --accent-foreground: oklch(0.279 0.041 260.03);
+
+  --destructive: oklch(0.577 0.245 27.33);
+  --destructive-foreground: oklch(0.98 0.003 247.86);
+
+  --success: oklch(0.627 0.17 149.21);
+  --success-foreground: oklch(0.98 0.003 247.86);
+
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.279 0.041 260.03);
+
+  --border: oklch(0.928 0.006 264.53);
+  --input: oklch(0.928 0.006 264.53);
+  --ring: oklch(0.546 0.215 262.88);
+
+  --sidebar: oklch(0.21 0.034 264.66); /* slate-900 */
+  --sidebar-foreground: oklch(0.93 0.013 255.51);
+  --sidebar-primary: oklch(0.546 0.215 262.88);
+  --sidebar-primary-foreground: oklch(0.98 0.003 247.86);
+  --sidebar-accent: oklch(0.279 0.041 260.03); /* slate-800 */
+  --sidebar-accent-foreground: oklch(0.93 0.013 255.51);
+  --sidebar-border: oklch(0.279 0.041 260.03);
+  --sidebar-ring: oklch(0.546 0.215 262.88);
+
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
