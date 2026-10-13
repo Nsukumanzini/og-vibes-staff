@@ -38,17 +38,10 @@ export async function updateSession(request: NextRequest) {
   const user = claims?.claims;
 
   const isDashboardRoute = request.nextUrl.pathname.startsWith("/dashboard");
-  const isLoginRoute = request.nextUrl.pathname.startsWith("/login");
 
   if (!user && isDashboardRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  if (user && isLoginRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

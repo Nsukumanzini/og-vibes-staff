@@ -24,13 +24,50 @@ export function LoginForm() {
     setError(null);
     setIsSubmitting(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (signInError) {
+      if (signInError.code === "email_not_confirmed") {
+        window.sessionStorage.setItem("og-vibes-staff-verification-email", email.trim());
+        router.replace("/verify-email");
+        router.refresh();
+        return;
+      }
       setError(signInError.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!data.user) {
+      setError("Unable to sign in right now. Please try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      setError(profileError.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (profileData?.role === "pending_lecturer") {
+      router.push("/pending-approval");
+      router.refresh();
+      return;
+    }
+
+    if (!profileData || !["lecturer", "admin"].includes(profileData.role)) {
+      await supabase.auth.signOut();
+      setError("This portal is restricted to approved OG Vibes staff accounts.");
       setIsSubmitting(false);
       return;
     }
@@ -55,7 +92,7 @@ export function LoginForm() {
         Sign in to your dashboard
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Use the email and password your department issued you.
+        Use the email and password from your approved lecturer account.
       </p>
 
       <div className="mt-4 rounded-xl border border-border/70 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
@@ -80,9 +117,10 @@ export function LoginForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={passwordId} className="text-sm font-medium text-foreground">
-            Password
-          </label>
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor={passwordId} className="text-sm font-medium text-foreground">Password</label>
+            <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary/80">Forgot password?</Link>
+          </div>
           <input
             id={passwordId}
             type="password"

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,12 +43,12 @@ export function LecturerSectionPage({
   description: string;
   summary: string;
   stats: StatItem[];
-  actions: ActionItem[];
+  actions?: ActionItem[];
   checklist: ChecklistItem[];
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 via-background to-background p-6 shadow-sm">
+      <div className="rounded-3xl border border-primary/20 bg-linear-to-br from-primary/10 via-background to-background p-6 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.25)]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link href="/dashboard">
@@ -56,7 +56,7 @@ export function LecturerSectionPage({
               Back to dashboard
             </Link>
           </Button>
-          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground">
+          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground shadow-sm">
             <Image src="/assets/logo.jpeg" alt="OG Vibes Staff logo" width={24} height={24} className="rounded-full object-cover" />
             OG Vibes Staff
           </div>
@@ -96,41 +96,7 @@ export function LecturerSectionPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick actions</CardTitle>
-            <CardDescription>Keep the most important tasks moving forward.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {actions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <div
-                  key={action.title}
-                  className="flex items-start justify-between gap-4 rounded-lg border border-border/70 bg-background/70 p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-md bg-primary/10 p-2 text-primary">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{action.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {action.description}
-                      </p>
-                    </div>
-                  </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={action.href}>
-                      Open
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+        {actions && actions.length > 0 ? null : null}
 
         <Card>
           <CardHeader>

@@ -1,148 +1,37 @@
 import Link from "next/link";
-import {
-  BadgeCheck,
-  BellRing,
-  BookOpen,
-  BrainCircuit,
-  Calendar,
-  ClipboardCheck,
-  MessageSquareText,
-  MonitorPlay,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { ArrowRight, BookOpen, CalendarClock, CheckCircle2, ClipboardList, MessageSquareText, MonitorPlay, Sparkles, Users } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/server";
-import {
-  getCurrentProfile,
-  getDashboardStats,
-  getRecentSubmissionsForLecturer,
-} from "@/lib/supabase/queries";
-import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { RecentActivityTable } from "@/components/dashboard/recent-activity-table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+import { getAssessmentBriefsForLecturer, getCurrentProfile, getDashboardStats, getModulesForStaff, getOnlineClassesForLecturer, getRecentSubmissionsForLecturer, getRegisteredStudentsForStaff } from "@/lib/supabase/queries";
 
-/**
- * DashboardHome — the lecturer dashboard landing page.
- *
- * This is a Server Component: all three Supabase calls run on the server,
- * before any HTML is sent to the browser. There's no client-side loading
- * state or useEffect here on purpose — Next.js waits for this component to
- * finish fetching, then streams the fully-rendered page. RLS (see
- * lib/supabase/queries.ts for the policies each helper depends on) scopes
- * every query to whichever lecturer is signed in, enforced by the database
- * itself rather than by anything in this component.
- */
 export default async function DashboardHome() {
   const supabase = await createClient();
-
   const profile = await getCurrentProfile(supabase);
-
-  // Fetch stats and recent activity in parallel — they're independent
-  // queries, no reason to wait for one before starting the other.
-  const [stats, recentSubmissions] = await Promise.all([
-    getDashboardStats(supabase),
-    getRecentSubmissionsForLecturer(supabase),
+  if (!profile) return null;
+  const [stats, recentSubmissions, modules, briefs, classes, registrations] = await Promise.all([
+    getDashboardStats(supabase), getRecentSubmissionsForLecturer(supabase), getModulesForStaff(supabase, profile),
+    getAssessmentBriefsForLecturer(supabase, profile.id), getOnlineClassesForLecturer(supabase, profile.id), getRegisteredStudentsForStaff(supabase),
   ]);
+  const now = Date.now();
+  const upcomingBriefs = briefs.filter((brief) => brief.published && brief.due_at && new Date(brief.due_at).getTime() >= now).sort((a,b)=>new Date(a.due_at!).getTime()-new Date(b.due_at!).getTime()).slice(0,4);
+  const upcomingClasses = classes.filter((item) => item.scheduled_at && new Date(item.scheduled_at).getTime() >= now && item.status !== "cancelled").sort((a,b)=>new Date(a.scheduled_at!).getTime()-new Date(b.scheduled_at!).getTime()).slice(0,4);
+  const uniqueStudents = new Set(registrations.map((item)=>item.student_id)).size;
+  const metrics = [
+    { icon: Users, label: "Registered students", value: uniqueStudents, note: `Across ${modules.length} teaching modules`, tone: "bg-blue-50 text-blue-700" },
+    { icon: ClipboardList, label: "Awaiting grades", value: stats.pending_grades, note: "Submitted student work", tone: "bg-amber-50 text-amber-700" },
+    { icon: CalendarClock, label: "Upcoming assessments", value: stats.upcoming_assessments, note: "Published deadlines", tone: "bg-violet-50 text-violet-700" },
+    { icon: MonitorPlay, label: "Live classes", value: upcomingClasses.length, note: "Scheduled ahead", tone: "bg-cyan-50 text-cyan-700" },
+  ];
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-br from-primary/15 via-background to-background p-6 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-3 py-1 text-sm font-medium text-primary">
-              <TrendingUp className="h-4 w-4" />
-              Staff dashboard
-            </div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Welcome back, {profile?.name ?? "Lecturer"}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-              Here&apos;s a clear view of your teaching flow for the term, from lessons and assessments to student communication.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border/70 bg-background/85 px-4 py-3 text-sm shadow-sm">
-            <p className="font-medium text-foreground">Today&apos;s focus</p>
-            <p className="text-muted-foreground">Review student submissions and update upcoming announcements.</p>
-          </div>
-        </div>
-      </div>
-
-      <SummaryCards stats={stats} />
-
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Lecturer workspace</CardTitle>
-          <CardDescription>
-            Move through your most important teaching workflows in one calm, organised space.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[
-            {
-              title: "Teaching content",
-              items: [
-                { href: "/dashboard/slides", label: "Lecture slides", description: "Share lesson decks", icon: BookOpen },
-                { href: "/dashboard/online-classes", label: "Online classes", description: "Host live sessions", icon: MonitorPlay },
-                { href: "/dashboard/modules", label: "My modules", description: "Organise courses", icon: BookOpen },
-              ],
-            },
-            {
-              title: "Assessment management",
-              items: [
-                { href: "/dashboard/assessments", label: "Assessments", description: "Manage submissions", icon: ClipboardCheck },
-                { href: "/dashboard/quizzes", label: "Quizzes", description: "Create learner checks", icon: BrainCircuit },
-                { href: "/dashboard/icass", label: "ICASS", description: "Upload marks", icon: BadgeCheck },
-              ],
-            },
-            {
-              title: "Communication",
-              items: [
-                { href: "/dashboard/alerts", label: "Alerts", description: "Post announcements", icon: BellRing },
-                { href: "/dashboard/messages", label: "Messages", description: "Talk with students", icon: MessageSquareText },
-              ],
-            },
-            {
-              title: "Student oversight",
-              items: [
-                { href: "/dashboard/students", label: "My students", description: "View enrolled learners", icon: Users },
-              ],
-            },
-            {
-              title: "Planning and organisation",
-              items: [
-                { href: "/dashboard/schedule", label: "Schedule", description: "Plan live sessions", icon: Calendar },
-              ],
-            },
-          ].map((group) => (
-            <div key={group.title} className="rounded-2xl border border-border/70 bg-background/70 p-4 shadow-sm">
-              <p className="mb-3 text-sm font-semibold text-foreground">{group.title}</p>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <Button key={item.href} asChild variant="outline" className="h-auto justify-start px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
-                      <Link href={item.href} className="flex w-full items-start gap-3 text-left">
-                        <div className="rounded-md bg-primary/10 p-2 text-primary">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <span>
-                          <span className="block font-medium">{item.label}</span>
-                          <span className="mt-1 block text-xs text-muted-foreground">{item.description}</span>
-                        </span>
-                      </Link>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <RecentActivityTable submissions={recentSubmissions} />
-    </div>
-  );
+  return <div className="space-y-6">
+    <section className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#06172f_0%,#0a4eb3_56%,#08a7b3_100%)] p-7 text-white shadow-2xl shadow-blue-900/20 sm:p-9"><div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/15 blur-3xl"/><div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between"><div className="max-w-3xl"><div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-cyan-100 backdrop-blur"><Sparkles className="h-3.5 w-3.5"/> Lecturer dashboard</div><h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">Good day, {profile.nickname?.trim() || profile.name}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">Your teaching operations at a glance—student progress, deadlines and live learning in one focused workspace.</p></div><div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><p className="text-xs font-black uppercase tracking-wider text-cyan-200">Today</p><p className="mt-1 text-xl font-black">{new Intl.DateTimeFormat("en-ZA",{weekday:"long",day:"numeric",month:"long"}).format(new Date())}</p><p className="mt-1 text-xs text-blue-100">{upcomingClasses.length ? `${upcomingClasses.length} upcoming live ${upcomingClasses.length===1?"class":"classes"}` : "No upcoming live classes"}</p></div></div></section>
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{metrics.map((item)=><article key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`inline-flex rounded-xl p-2.5 ${item.tone}`}><item.icon className="h-5 w-5"/></div><p className="mt-4 text-3xl font-black tracking-tight text-slate-950">{item.value}</p><p className="mt-1 font-bold text-slate-800">{item.label}</p><p className="text-xs text-slate-500">{item.note}</p></article>)}</section>
+    <section className="grid gap-6 xl:grid-cols-[1.1fr_.9fr]"><div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-wider text-blue-600">Teaching portfolio</p><h2 className="text-xl font-black">Module engagement</h2></div><Link href="/dashboard/modules" className="inline-flex items-center gap-1 text-sm font-bold text-blue-700">Manage modules <ArrowRight className="h-4 w-4"/></Link></div><div className="mt-5 space-y-3">{modules.map((module)=>{const count=new Set(registrations.filter((item)=>item.module_id===module.id).map((item)=>item.student_id)).size;return <div key={module.id} className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4"><span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-100 text-blue-700"><BookOpen className="h-5 w-5"/></span><div className="min-w-0 flex-1"><p className="truncate font-black text-slate-900">{module.name}</p><p className="text-xs text-slate-500">{module.code||"Module"} · Level {module.level}</p></div><div className="text-right"><p className="text-lg font-black">{count}</p><p className="text-[10px] font-bold uppercase text-slate-400">students</p></div></div>})}{!modules.length&&<p className="py-10 text-center text-sm text-slate-500">No teaching modules have been assigned yet.</p>}</div></div><div className="space-y-6"><AgendaCard title="Next live classes" href="/dashboard/online-classes" icon={MonitorPlay} empty="No classes scheduled" items={upcomingClasses.map((item)=>({id:item.id,title:item.topic||item.subject||"Online class",meta:`${item.module||"Module"} · ${new Date(item.scheduled_at!).toLocaleString()}`}))}/><AgendaCard title="Assessment deadlines" href="/dashboard/assessments" icon={CheckCircle2} empty="No upcoming deadlines" items={upcomingBriefs.map((item)=>({id:item.id,title:item.title||"Assessment",meta:`${item.subject||"Module"} · ${new Date(item.due_at!).toLocaleString()}`}))}/></div></section>
+    <section className="grid gap-4 md:grid-cols-3"><QuickAction href="/dashboard/assessments" icon={ClipboardList} title="Grade submissions" text="Review work, apply rubrics and send feedback."/><QuickAction href="/dashboard/attendance" icon={CheckCircle2} title="Take attendance" text="Open a physical or online class register."/><QuickAction href="/dashboard/messages" icon={MessageSquareText} title="Message students" text="Continue direct conversations and share files."/></section>
+    <RecentActivityTable submissions={recentSubmissions}/>
+  </div>;
 }
+
+function AgendaCard({title,href,icon:Icon,items,empty}:{title:string;href:string;icon:typeof MonitorPlay;items:{id:string;title:string;meta:string}[];empty:string}) { return <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><Icon className="h-5 w-5 text-blue-600"/><h2 className="font-black">{title}</h2></div><Link href={href} className="text-xs font-black text-blue-700">View all</Link></div><div className="mt-4 space-y-2">{items.map((item)=><div key={item.id} className="rounded-xl bg-slate-50 p-3"><p className="truncate text-sm font-bold">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.meta}</p></div>)}{!items.length&&<p className="py-6 text-center text-sm text-slate-500">{empty}</p>}</div></article>; }
+function QuickAction({href,icon:Icon,title,text}:{href:string;icon:typeof MonitorPlay;title:string;text:string}) { return <Link href={href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg"><div className="flex items-start gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Icon className="h-5 w-5"/></span><div><p className="font-black text-slate-950">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p><span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-blue-700">Open workspace <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1"/></span></div></div></Link>; }

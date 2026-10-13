@@ -1,46 +1,16 @@
-import { BrainCircuit, PencilRuler } from "lucide-react";
+import { QuizManager } from "@/components/dashboard/quiz-manager";
+import { QuizResultsDashboard } from "@/components/dashboard/quiz-results-dashboard";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile, getModulesForStaff, getQuizResultsForStaff, getQuizzesForStaff } from "@/lib/supabase/queries";
 
-import { LecturerSectionPage } from "@/components/dashboard/lecturer-section-page";
-
-export default function QuizzesPage() {
-  return (
-    <LecturerSectionPage
-      title="Quizzes"
-      description="Create and manage formative assessments, timed tests and other quiz-based learning activities."
-      summary="Support continuous learning by publishing quizzes that students can complete in the app and review immediately."
-      stats={[
-        { label: "Published quizzes", value: "9", detail: "ready for students" },
-        { label: "Average score", value: "71%", detail: "class performance" },
-        { label: "Upcoming", value: "2", detail: "scheduled this week" },
-      ]}
-      actions={[
-        {
-          title: "Create a new quiz",
-          description: "Build a timed assessment with multiple-choice, short answer or mixed questions.",
-          href: "/dashboard/quizzes",
-          icon: PencilRuler,
-        },
-        {
-          title: "Review performance",
-          description: "See student results and identify where learners need extra support.",
-          href: "/dashboard/quizzes",
-          icon: BrainCircuit,
-        },
-      ]}
-      checklist={[
-        {
-          title: "Student-facing quiz flow",
-          description: "Students can access quizzes from the app and submit answers in real time.",
-        },
-        {
-          title: "Auto-marking support",
-          description: "Multiple-choice and short-form assessments can be evaluated quickly.",
-        },
-        {
-          title: "Insightful reporting",
-          description: "Results can guide revision, feedback and future lesson planning.",
-        },
-      ]}
-    />
-  );
+export default async function QuizzesPage() {
+  const supabase = await createClient();
+  const profile = await getCurrentProfile(supabase);
+  if (!profile) return null;
+  const [modules, quizzes, results] = await Promise.all([
+    getModulesForStaff(supabase, profile),
+    getQuizzesForStaff(supabase, profile),
+    getQuizResultsForStaff(supabase, profile.id),
+  ]);
+  return <div className="space-y-6"><QuizManager profile={profile} modules={modules} initialQuizzes={quizzes} /><QuizResultsDashboard quizzes={quizzes} attempts={results.attempts} answers={results.answers} /></div>;
 }

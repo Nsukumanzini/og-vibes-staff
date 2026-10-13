@@ -18,16 +18,20 @@ export default async function DashboardLayout({
   // Middleware already redirects unauthenticated visitors away from
   // /dashboard, but it can't check *role* without an extra DB round trip
   // on every request. We do that check here instead, once per navigation.
-  if (!profile || profile.role !== "lecturer") {
+  if (profile?.role === "pending_lecturer") {
+    redirect("/pending-approval");
+  }
+
+  if (!profile || !["lecturer", "admin"].includes(profile.role)) {
     redirect("/login");
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar profile={profile} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 px-4 py-5 pb-28 sm:px-6 sm:pb-28 lg:px-8 lg:py-7 lg:pb-7">{children}</main>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, PlusCircle, CalendarClock, ClipboardList, Sparkles } from "lucide-react";
+import { Users, CalendarClock, ClipboardList, Sparkles } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function SummaryCards({ stats }: { stats: DashboardStats }) {
       />
 
       {/* Action card, not a stat — creating a quiz isn't a count. */}
-      <Card className="flex flex-col justify-between border border-dashed border-primary/30 bg-primary/5">
+      <Card className="flex flex-col justify-between border border-dashed border-primary/30 bg-primary/5 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Quick action
